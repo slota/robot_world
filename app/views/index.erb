@@ -1,0 +1,5 @@
+<h1>All Robots</h1>
+
+<% @robots.each do |robot| %>
+  <h3><%= robot.id %>: <a href="/robots/<%= robot.id %>"><%= robot.title %></a></h3>
+<% end %>
