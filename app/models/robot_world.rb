@@ -1,35 +1,44 @@
-require 'yaml/store'
-require_relative 'robot'
-
 class RobotWorld
   def self.create(robot)
-    database.transaction do
-      database['robots'] ||= []
-      database['total'] ||= 0
-      database['total'] += 1
-      database['robots'] << { "id" => database['total'], "title" => robot[:title], "description" => robot[:description] }
-    end
+    database.from(:robots).insert(data)
   end
 
   def self.database
-    @database ||= YAML::Store.new("db/robot_world")
-  end
-
-  def self.raw_robots
-    database.transaction do
-      database['robots'] || []
+    if ENV["RACK_ENV"] == "test"
+      @database ||= Sequel.sqlite("db/robot_world_test.sqlite3")
+    else
+      @database ||= Sequel.sqlite("db/robot_world_development.sqlite3")
     end
   end
 
+  def self.raw_robots
+    database.from(:robots).insert(data)
+  end
+
   def self.all
-    raw_robots.map { |data| Robot.new(data) }
+    robots = database.from(:robots).to_a
+    robots.map { |data| Robot.new(data) }
   end
 
   def self.raw_robot(id)
     raw_robots.find { |robot| robot["id"] == id }
   end
 
-  def self.find(id)
-    Robot.new(raw_robot(id))
+  def self.update(id, data)
+    database.from(:robots).where(:id => id).update(data)
   end
+
+  def self.find(id)
+    robot = database.from(:robots).where(:id=>id).to_a.first
+    Robot.new(robot)
+  end
+
+  def self.create(data)
+    database.from(:robots).insert(data)
+  end
+
+  def self.dataset
+    database.from(:tasks)
+  end
+
 end
